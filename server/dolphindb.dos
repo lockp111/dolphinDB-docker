@@ -1,0 +1,112 @@
+defg avgReduce(mysum, mycount){
+	totalsum =sum(mysum).double()
+	return totalsum/sum(mycount)
+}
+
+defg stdReduce(mysum, mysum2, mycount){ 
+	cnt=sum(mycount)
+	if(cnt<2) return 00F 
+	
+	totalsum=sum(mysum).double()
+	return sqrt((sum(mysum2)-totalsum*totalsum/cnt)/(cnt-1))
+}
+
+defg varReduce(mysum, mysum2, mycount){ 
+	cnt=sum(mycount)
+	if(cnt<2) return 00F
+	
+	totalsum = sum(mysum).double()
+	return (sum(mysum2)-totalsum*totalsum/cnt)/(cnt-1)
+}
+
+defg skewReduce(mysum, mysum2, mysum3, mycount){ 
+	cnt=sum(mycount)
+	if(cnt<2) return 00F
+	
+	totalsum = sum(mysum).double()
+	totalsum2 = sum(mysum2).double()
+	myvar = (totalsum2 - totalsum*totalsum/cnt)/cnt
+	m3 = (sum(mysum3) - 3*totalsum/cnt*totalsum2 + 2*cnt*pow(totalsum/cnt, 3))/cnt
+	return m3/pow(myvar,1.5)
+}
+
+defg kurtosisReduce(mysum, mysum2, mysum3, mysum4, mycount){ 
+	cnt=sum(mycount)
+	if(cnt<3) return 00F
+	
+	totalsum = sum(mysum).double()
+	mean = totalsum/cnt
+	totalsum2 = sum(mysum2).double()
+	totalsum3 = sum(mysum3).double()
+	myvar = (totalsum2 - totalsum*totalsum/cnt)/cnt
+	m4 = (sum(mysum4) - 3*cnt*pow(mean, 4) - 4*mean*totalsum3 + 6*mean*mean*totalsum2)/cnt
+	return m4/myvar/myvar
+}
+
+defg covarReduce(mysumxy, mysumx, mysumy, mycount){
+	cnt=sum(mycount)
+	if(cnt<2) 
+		return 00F
+	
+	totalsumx = sum(mysumx).double()
+	totalsumy = sum(mysumy).double()
+	return (sum(mysumxy)-totalsumx*totalsumy/cnt)/(cnt-1)
+} 
+
+defg corrReduce(mysumxy, mysumx2, mysumx, mysumy2, mysumy, mycount){
+	cnt=sum(mycount) 
+	if(cnt<2) 
+		return 00F
+		
+	totalsumx = sum(mysumx).double()
+	totalsumy = sum(mysumy).double()
+	return (sum(mysumxy)-totalsumx*totalsumy/cnt)/sqrt((sum(mysumx2)-totalsumx*totalsumx/cnt)*(sum(mysumy2)-totalsumy*totalsumy/cnt))
+} 
+
+def avgRunning(mysum, mycount): mysum\mycount
+def varRunning(mysum, mysum2, mycount): (mysum2 - mysum\mycount*mysum)/(mycount - 1)
+def stdRunning(mysum, mysum2, mycount): sqrt((mysum2 - mysum\mycount*mysum)/(mycount - 1))
+
+def skewRunning(mysum, mysum2, mysum3, mycount){
+	mean = mysum\mycount
+	myvar = (mysum2 - mean*mysum)/mycount
+	m3=(mysum3 - 3.0*mean*mysum2 + 2.0*mycount*pow(mean, 3))/mycount
+	return iif(mycount<2, 00F, m3/pow(myvar,1.5))
+}
+
+def kurtosisRunning(mysum, mysum2, mysum3, mysum4, mycount){ 
+	mean = mysum\mycount
+	myvar = (mysum2 - mean*mysum)/mycount
+	m4=(mysum4 - 3*mycount*pow(mean, 4) - 4*mean*mysum3 + 6*mean*mean*mysum2)/mycount
+	return iif(mycount<3, 00F, m4/myvar/myvar)
+}
+
+def covarRunning(mysumxy, mysumx, mysumy, mycount): (mysumxy - mysumx\mycount*mysumy)/(mycount - 1)
+def corrRunning(mysumxy, mysumx2, mysumx, mysumy2, mysumy, mycount): (mysumxy - mysumx\mycount*mysumy)/sqrt((mysumx2 - mysumx\mycount*mysumx)*(mysumy2 - mysumy\mycount*mysumy))
+
+mapr distinct(x){distinct(x)->distinct}
+mapr sum(x){sum(x)->sum; cumsum}
+mapr sum2(x){sum2(x)->sum; cumsum}
+mapr sum3(x){sum3(x)->sum; cumsum}
+mapr sum4(x){sum4(x)->sum; cumsum}
+mapr prod(x){prod(x)->prod; cumprod}
+mapr max(x){max(x)->max; cummax}
+mapr min(x){min(x)->min; cummin}
+mapr first(x){first(x)->first; first}
+mapr last(x){last(x)->last; copy}
+mapr count(x){count(x)->sum; cumsum}
+mapr size(x){size(x)->sum; cumsum}
+mapr avg(x){sum(x),count(x)->avgReduce; cumsum,cumsum->avgRunning}
+mapr std(x){sum(x),sum2(x),count(x)->stdReduce; cumsum,cumsum,cumsum->stdRunning}
+mapr var(x){sum(x),sum2(x),count(x)->varReduce; cumsum,cumsum,cumsum->varRunning}
+mapr skew(x){sum(x),sum2(x),sum3(x),count(x)->skewReduce; cumsum,cumsum,cumsum,cumsum->skewRunning}
+mapr kurtosis(x){sum(x),sum2(x),sum3(x),sum4(x),count(x)->kurtosisReduce; cumsum,cumsum,cumsum,cumsum,cumsum->kurtosisRunning}
+mapr wsum(x,y){wsum(x,y)->sum; cumsum}
+mapr contextCount(x,y){contextCount(x,y)->sum; cumsum}
+mapr contextSum(x,y){contextSum(x,y)->sum; cumsum}
+mapr contextSum2(x,y){contextSum2(x,y)->sum; cumsum}
+mapr wavg(x,y){wavg(x,y),contextSum(y,x)->wavg; copy,copy->cumwavg}
+mapr covar(x,y){wsum(x,y),contextSum(x,y),contextSum(y,x),contextCount(y,x)->covarReduce; cumsum,cumsum,cumsum,cumsum->covarRunning}
+mapr corr(x,y){wsum(x,y),contextSum2(x,y),contextSum(x,y),contextSum2(y,x),contextSum(y,x),contextCount(y,x)->corrReduce; cumsum,cumsum,cumsum,cumsum,cumsum,cumsum->corrRunning}
+mapr atImax(x,y){max(x),atImax(x,y)->atImax}
+mapr atImin(x,y){min(x),atImin(x,y)->atImin}
